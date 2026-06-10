@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 28px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .input-group input:focus { border-color: #4f46e5; }
+
+        .input-group input[type="file"] {
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        #preview {
+            display: none;
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover { background: #3730a3; }
+
+        .login-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .login-link a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+        .login-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>New User Registration</h2>
+        <div class="input-group">
+            <label>Name</label>
+            <input type="text" id="Name" placeholder="Enter your name">
+        </div>
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter username">
+        </div>
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="Enter email">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter password">
+        </div>
+        <div class="input-group">
+            <label>Profile Image</label>
+            <input type="file" id="image" accept="image/*" onchange="previewImage(event)">
+        </div>
+
+        <img id="preview">
+        <button class="btn-primary" onclick="registerUser()">Register</button>
+        <div class="login-link">
+            Already have an account? <a href="/">Login</a>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const preview = document.getElementById("preview");
+            preview.src = URL.createObjectURL(event.target.files[0]);
+            preview.style.display = "block";
+        }
+
+        async function registerUser(){
+            var name = document.getElementById("Name").value;
+            var username = document.getElementById("username").value;
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+            var image = document.getElementById("image").files[0];
+
+            if (!name || !username || !email || !password || !image){
+                alert("Please fill all the fields.");
+                return;
+            }
+
+            try{
+                const formData = new FormData();
+                formData.append("name",name);
+                formData.append("username",username);
+                formData.append("email",email);
+                formData.append("password",password);
+                formData.append("file",image);
+
+                const response = await fetch("http://localhost:8000/register", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+                alert(data.message);
+                if (response.ok){
+                    window.location.href = "/";
+                }
+
+            } catch(error){
+                console.error("Error:", error);
+                alert("An error occurred during registration.");
+            }
+        }
+    </script>
+
+</body>
+</html>

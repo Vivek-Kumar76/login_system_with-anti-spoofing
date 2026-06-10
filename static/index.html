@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Recognition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    h2 { margin-bottom: 24px; color: #333; }
+    h3 { margin-bottom: 16px; color: #555; }
+
+    .tab-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #4f46e5;
+      background: white;
+      color: #4f46e5;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .tab-buttons button:hover {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .input-group {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-group input:focus { border-color: #4f46e5; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover { background: #3730a3; }
+
+    video {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Face Recognition System</h2>
+
+    <div class="tab-buttons">
+      <button onclick="showTab('password')">🔑 Password Login</button>
+      <button onclick="showTab('face')">📷 Face Login</button>
+    </div>
+    <div id="password-tab">
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Enter username">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter password">
+      </div>
+    
+      <button class="btn-primary" onclick="loginUser()">Login</button>
+    </div>
+    <div id="face-tab" style="display:none;">
+      <h3>Position your face in the camera</h3>
+      <video id="video" autoplay></video>
+      <button class="btn-primary" onclick="captureImage()">📸 Capture & Login</button>
+      <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let stream = null;
+
+    function showTab(tab) {
+      document.getElementById("password-tab").style.display = tab === "password" ? "block" : "none";
+      document.getElementById("face-tab").style.display = tab === "face"? "block" : "none";
+      if (tab === "face") startCamera();
+      else stopCamera();
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById("video").srcObject = stream;
+      } catch (error) {
+        alert("Could not access camera: " + error.message);
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    }
+
+    async function captureImage() {
+      const video= document.getElementById("video");
+      const canvas= document.getElementById("canvas");
+      const context= canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob, "capture.jpg");
+        try {
+          const response = await fetch("http://localhost:8000/login", {
+            method: "POST",
+            body: formData
+          });
+          const data = await response.json();
+          alert(data.message + " (Spoof Probability: " + data.spoof_probability + ")" );
+          if (data.decision === "live") {
+            console.log("live_probability: " + data.live_probability);
+            stopCamera();
+            window.location.href = "/dashboard";
+          }
+        } catch (error) {
+          alert("An error occurred. Please try again.");
+        }
+      }, "image/jpeg");
+    }
+
+    async function loginUser() {
+      const username= document.getElementById("username").value;
+      const password= document.getElementById("password").value;
+      if (!username || !password) {
+        alert("Please fill all the fields.");
+        return;
+      }
+      try {
+        const response = await fetch("http://localhost:8000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        alert(data.message);
+        if (response.ok) window.location.href = "/dashboard";
+      } catch (error) {
+        alert("An error occurred. Please try again.");
+      }
+    }
+  </script>
+
+</body>
+</html>
