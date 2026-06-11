@@ -68,12 +68,27 @@ async def login_face(file: UploadFile = File(...)):
     result = detector.predict_image(face_array)
     live_probability= round(float(result.live_probability), 6)
     spoof_probability= round(1 - live_probability, 6)
+    decision = result.decision
+    is_live = result.is_live
+    is_spoof = result.is_spoof
+    review = result.needs_manual_review
+    reject_threshold = result.reject_threshold
+    accept_threshold = result.accept_threshold
+    thrshold_policy = result.threshold_policy
 
-    if spoof_probability > 0.60:
+    print(f"Live Probability: {live_probability}, Spoof Probability: {spoof_probability}")
+
+    if is_spoof == True:
         return {
-            "decision": "spoof",
+            "decision": decision,
             "live_probability": live_probability,
             "spoof_probability": spoof_probability,
+            "is_live": is_live,
+            "is_spoof": is_spoof,
+            "needs_manual_review": review,
+            "reject_threshold": reject_threshold,
+            "accept_threshold": accept_threshold,
+            "threshold_policy": thrshold_policy,
             "message": "Spoof detected — looks like a photo, screen, or replay."
         }
 
@@ -92,11 +107,17 @@ async def login_face(file: UploadFile = File(...)):
     best_match  = max(similarity_scores, key=similarity_scores.get)
     best_score  = round(float(similarity_scores[best_match]), 4)
 
-    if best_score > 0.60:
+    if(best_score > 0.60):
         return {
-            "decision": "live",
+            "decision": decision,
             "live_probability": live_probability,
             "spoof_probability": spoof_probability,
+            "is_live": is_live,
+            "is_spoof": is_spoof,
+            "needs_manual_review": review,
+            "reject_threshold": reject_threshold,
+            "accept_threshold": accept_threshold,
+            "threshold_policy": thrshold_policy,
             "similarity_score": best_score,
             "message": f"Welcome back, {best_match}!"
         }
@@ -106,7 +127,7 @@ async def login_face(file: UploadFile = File(...)):
             detail=f"Face not recognized. Best similarity: {best_score}"
         )
 
-@app.post("/register")
+@app.post("/registeration")
 async def register(name: str= Form(...),
                    username: str= Form(...),
                    email: str= Form(...),
@@ -133,8 +154,6 @@ async def register(name: str= Form(...),
     return {
         "message": "User registered successfully."
     }
-
-
 if __name__ == "__main__":
     import uvicorn
 

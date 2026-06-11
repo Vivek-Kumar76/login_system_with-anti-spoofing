@@ -155,7 +155,7 @@
                 formData.append("password",password);
                 formData.append("file",image);
 
-                const response = await fetch("http://localhost:8000/register", {
+                const response = await fetch("http://localhost:8000/registeration", {
                     method: "POST",
                     body: formData
                 });
